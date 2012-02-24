@@ -24,31 +24,31 @@ environment.
 
 ## Usage
 
-`> cap -T
-cap deploy                 # Deploys your project.
-cap deploy:check           # Test deployment dependencies.
-cap deploy:cleanup         # Clean up old releases.
-cap deploy:finalize_update # Makes the latest release group writeable
-cap deploy:restart         # Restart Postgres and Tomcat
-cap deploy:rollback        # Rolls back to a previous version and restarts.
-cap deploy:rollback:code   # Rolls back to the previously deployed version.
-cap deploy:setup           # Prepares one or more servers for deployment.
-cap deploy:symlink         # Updates the symlink to the most recently deploye...
-cap deploy:update          # Copies your project and updates the symlink.
-cap deploy:update_code     # Copies your project to the remote servers.
-cap dspace:build           # Build dspace with maven
-cap dspace:deploy          # Deploy DSpace with Ant
-cap dspace:update          # Update DSpace with Ant
-cap invoke                 # Invoke a single command on the remote servers.
-cap postgres:start         # Start PostgreSQL
-cap postgres:stop          # Stop PostgreSQL
-cap prep:init              # Initializes the service directory
-cap prep:install_java      # Install Java JDK
-cap prep:install_maven     # Install Maven
-cap shell                  # Begin an interactive Capistrano session.
-cap tomcat:clean           # Clean Tomcat cache
-cap tomcat:restart         # Restart Tomcat
-cap tomcat:start           # Start Tomcat
-cap tomcat:stop            # Stop Tomcat
-cap tomcat:tail            # Tail tomcat/logs/catalina.out`
-    
+    > cap -T
+    cap deploy                 # Deploys your project.
+    cap deploy:check           # Test deployment dependencies.
+    cap deploy:cleanup         # Clean up old releases.
+    cap deploy:finalize_update # Makes the latest release group writeable
+    cap deploy:restart         # Restart Postgres and Tomcat
+    cap deploy:rollback        # Rolls back to a previous version and restarts.
+    cap deploy:rollback:code   # Rolls back to the previously deployed version.
+    cap deploy:setup           # Prepares one or more servers for deployment.
+    cap deploy:symlink         # Updates the symlink to the most recently deploye...
+    cap deploy:update          # Copies your project and updates the symlink.
+    cap deploy:update_code     # Copies your project to the remote servers.
+    cap dspace:build           # Build dspace with maven
+    cap dspace:deploy          # Deploy DSpace with Ant
+    cap dspace:update          # Update DSpace with Ant
+    cap invoke                 # Invoke a single command on the remote servers.
+    cap postgres:start         # Start PostgreSQL
+    cap postgres:stop          # Stop PostgreSQL
+    cap prep:init              # Initializes the service directory
+    cap prep:install_java      # Install Java JDK
+    cap prep:install_maven     # Install Maven
+    cap shell                  # Begin an interactive     Capistrano session.
+    cap tomcat:clean           # Clean Tomcat cache
+    cap tomcat:restart         # Restart Tomcat
+    cap tomcat:start           # Start Tomcat
+    cap tomcat:stop            # Stop Tomcat
+    cap tomcat:tail            # Tail tomcat/logs/catalina.out
+
