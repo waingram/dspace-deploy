@@ -11,15 +11,15 @@ Because I've set up DSpace too many times.
 ## Caveats 
 
 The installation assumes you are installing the whole stack in a
-_service directory_ as a _service user_, which is the way our campus
-IT requires us to do it. For example, our server will have a directory
-called `/services/ideals-dspace` that is owned by the `ideals-dspace`
-user account. Everything in the _service directory_ is owned by the
-_service user_ (_e.g._, `~/java/`, `~/maven/`, `~/tomcat`, etc, etc).
-However, Apache and Postgres are owned by `root`. There is a `~/pgsql/`
-directory in the _service directory_ owned by the _service user_ which
-contains our database, but the actual database server is owned by
-`root`. All of this should be easy to change and customize to your
+*service directory* as a *service user*, which is the way our campus
+IT requires us to do it. Everything in the *service directory* is owned by the
+*service user* (_e.g._, `~/java/`, `~/maven/`, `~/tomcat`, _etc_, _etc_).
+Apache and Postgres are owned by *root*, so their configuration is not
+covered here. We are responsible for our own database, though, which
+lives at `~/pgsql` (_i.e._, while *root* owns the database _server_,
+the *service user* owns the database _itself_).
+
+All of this should be easy to change and customize to your
 environment. 
 
 ## Usage
