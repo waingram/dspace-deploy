@@ -43,6 +43,9 @@ set :mvn_profiles, "all,ideals-test"
 set :skip_tests, "true"
 
 # Ant
+set :ant_install_archive, "apache-maven-2.2.1-bin.tar.gz"
+set :ant_download_mirror, "http://apache.deathculture.net//maven/binaries/apache-maven-2.2.1-bin.tar.gz"
+set :ant_version, "apache-maven-2.2.1"
 set :ant_home, "#{service_root}/ant"
 
 # Tomcat
@@ -104,6 +107,22 @@ namespace :prep do
     run "cd #{service_root} && tar xzvf #{maven_install_archive} 1>/dev/null"
     run "cd #{service_root} && mv #{maven_version} maven"
     run "cd #{service_root} && rm -f #{maven_install_archive}"
+  end
+    
+  desc 'Install Ant'
+  task :install_ant, :roles => :app do
+    run "mkdir -p #{ant_home}"
+
+    # Delete any old files
+    run "cd #{ant_home} && rm -rf *"
+    
+    logger.info "web download #{ant_download_mirror}" if logger
+    buffer = open(ant_download_mirror).read
+    put buffer, "#{service_root}/#{ant_install_archive}", :mode => 0755
+    
+    run "cd #{service_root} && tar xzvf #{ant_install_archive} 1>/dev/null"
+    run "cd #{service_root} && mv #{ant_version} maven"
+    run "cd #{service_root} && rm -f #{ant_install_archive}"
   end
 end
 
