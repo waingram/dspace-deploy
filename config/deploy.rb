@@ -8,7 +8,7 @@ require 'open-uri'
 set :application,    "ideals-dspace"
 set :env_type,       "dev"
 
-set :scm, :subversion
+set :scm, :subfilename
 set :repository,     "https://track.library.uiuc.edu/svn/ideals-dspace/trunk"
 
 server               "luk.cites.illinois.edu", :app, :db, :primary => true
@@ -19,8 +19,8 @@ set :copy_strategy, :export
 set :user,           "ideals-dspace"
 set :group,          "ideals-dspace"
 
-#set :service_root,  "/services/#{application}/tmp/#{application}"
-set :service_root,   "/services/#{application}"
+set :service_root,  "/services/#{application}/tmp/#{application}"
+#set :service_root,   "/services/#{application}"
 set :service_email,  "ideals-admin@illinois.edu"
 
 depend :remote, :directory, service_root
@@ -31,7 +31,7 @@ set :use_sudo,       false
 # Java
 set :java_binary,    "jdk-6u31-linux-x64.bin"
 set :java_mirror,    "http://download.oracle.com/otn-pub/java/jdk/6u31-b04/jdk-6u31-linux-x64.bin"
-set :jdk_version,    "jdk1.6.0_31"
+set :jdk_filename,    "jdk1.6.0_31"
 set :java_home,      "#{service_root}/java"
 set :jdk_home,       "#{java_home}/jdk"
 set :jre_home,       "#{jdk_home}/jre"
@@ -41,7 +41,7 @@ set :java_opts,      "-Dhttps.protocols=SSLv3"
 # Maven
 set :maven_tarball,  "apache-maven-2.2.1-bin.tar.gz"
 set :maven_mirror,   "http://apache.deathculture.net//maven/binaries/apache-maven-2.2.1-bin.tar.gz"
-set :maven_version,  "apache-maven-2.2.1"
+set :maven_filename,  "apache-maven-2.2.1"
 set :maven_home,     "#{service_root}/maven"
 set :maven_opts,     "-Xms256M -Xmx512M -Dfile.encoding=UTF-8"
 set :mvn_profiles,   "all,ideals-test"
@@ -50,15 +50,15 @@ set :skip_tests,     "true"
 # Ant
 set :ant_tarball,    "apache-maven-2.2.1-bin.tar.gz"
 set :ant_mirror,     "http://apache.deathculture.net//maven/binaries/apache-maven-2.2.1-bin.tar.gz"
-set :ant_version,    "apache-maven-2.2.1"
+set :ant_filename,    "apache-maven-2.2.1"
 set :ant_home,       "#{service_root}/ant"
 
 # Tomcat
 set :catalina_home,  "#{service_root}/tomcat"
 set :catalina_opts,  "-server -Xms512M -Xmx1024M -Dfile.encoding=UTF-8"
-set :tomcat_tarball, "apache-tomcat-6.6-bin.tar.gz"
-set :tomcat_mirror,  "http://apache./tomcat/binaries/apache-tomcat-6.6-bin.tar.gz"
-set :tomcat_version, "apache-tomcat-6.6"
+set :tomcat_tarball, "apache-tomcat-6.0.35.tar.gz"
+set :tomcat_mirror,  "http://www.reverse.net/pub/apache/tomcat/tomcat-6/v6.0.35/bin/apache-tomcat-6.0.35.tar.gz"
+set :tomcat_filename, "apache-tomcat-6.0.35"
 set :tomcat_home,    "#{catalina_home}"
 
 # Postgres
@@ -67,7 +67,7 @@ set :pg_data,        "#{pg_home}/databases"
 set :pg_host,        "#{pg_home}/run"
 
 # DSpace
-set :dspace_version, "1.6.2"
+set :dspace_filename, "1.6.2"
 set :dspace_home,    "#{service_root}/dspace"
 set :dspace_source,  "#{deploy_to}"
 set :dspace_db_user, "dspace"
@@ -94,14 +94,14 @@ namespace :prep do
     run "mkdir -p #{java_home}"
 
     # Delete any old files
-    run "cd #{java_home} && rm -rf *.*"
+    run "cd #{java_home} && rm -rf *"
     
     logger.info "web download #{java_mirror}" if logger
     buffer = open(java_mirror).read
     put buffer, "#{java_home}/#{java_binary}", :mode => 0755
     
     run "cd #{java_home} && echo 'yes' '\n' | ./#{java_binary} 1>/dev/null"
-    run "cd #{java_home} && ln -s #{jdk_version} jdk"
+    run "cd #{java_home} && ln -s #{jdk_filename} jdk"
     run "cd #{java_home} && rm -f #{java_binary}"
   end
   
@@ -120,6 +120,14 @@ namespace :prep do
     install_tarball tomcat_home, tomcat_mirror, tomcat_tarball, tomcat_filename
   end
 
+  desc 'Configure Tomcat'
+  task :conf_tomcat, :roles => :app do
+    file = File.join(File.dirname(__FILE__), 'templates', 'server.xml.erb')
+    template = File.read(file)
+    buffer = ERB.new(template).result(binding)
+    put buffer, "#{tomcat_home}/conf/server.xml", :mode => 0600
+  end
+  
   desc 'Install PostgreSQL'
   task :install_postgresql, :roles => :db do
     
@@ -135,31 +143,46 @@ namespace :prep do
       run "cd #{service_root} && PGDATA=#{pg_data} PGHOST=#{pg_host} psql -d template1 -f tmp/postgres.#{stamp}.out"
     end
   end
+
+  desc 'Configure PostgreSQL'
+  task :conf_postgres, :roles => :db do
+  end
   
 end
 
-def install_tarball dir, mirror, tarball, filename
-  run "mkdir -p #{dir}"
 
-  # Delete any old files
-  run "cd #{dir} && rm -rf *.*"
+# Helper function for installing Tomcat, Maven, and Ant -- same pattern
+# 
+# +dir+::      Target directory for the installation, e.g., ~/tomcat
+# +mirror+::   Download mirror URL, e.g., http://apache.org/tomact/apache-tomcat-6.0.35.tar.gz
+# +tarball+::  File name of the downloaded tarball, e.g., apache-tomcat-6.0.35.tar.gz
+# +filename+:: Name of the directory resulting from un-taring the tarball, e.g., apache-tomcat-6.0.35
+def install_tarball dir, mirror, tarball, filename
+  
+  # Delete any existing installation
+  run "rm -rf #{dir}"
   
   logger.info "web download #{mirror}" if logger
   buffer = open(mirror).read
-  put buffer, "#{service_root}/#{file}", :mode => 0755
+  put buffer, "#{service_root}/#{tarball}", :mode => 0755
   
-  run "cd #{service_root} && tar xzvf #{file} 1>/dev/null"
-  run "cd #{service_root} && mv #{name} #{dir}"
-  run "cd #{service_root} && rm -f #{file}"
+  run "cd #{service_root} && tar xzvf #{tarball} 1>/dev/null"
+  run "cd #{service_root} && mv #{filename} #{dir}"
+  run "cd #{service_root} && rm -rf #{filename}"
+  run "cd #{service_root} && rm -f #{tarball}"
 end
 
-
+# Helper funtion to check is a file exists on the server
+#
+# +remote_path+:: Full path to the file in question
 def remote_file_exists? remote_path
   'true' ==  capture("if [ -e #{remote_path} ]; then echo 'true'; fi").strip
 end
 
+# Some before and after hooks for cold deploy
 before 'prep:install_postgresql', 'tomcat:stop', 'postgres:stop'
 after 'prep:install_postgresql', 'postgres:start', 'tomcat:start'
+
 
 ###
 ### Regular Deploy (Upgrade)
@@ -242,12 +265,12 @@ namespace :dspace do
 
   desc "Deploy DSpace with Ant"
   task :deploy, :roles=>[:app] do
-    run "cd #{deploy_to}/current/dspace/target/dspace-#{dspace_version}-build.dir && JAVA_HOME=#{java_home} #{ant_home}/bin/ant fresh-install"
+    run "cd #{deploy_to}/current/dspace/target/dspace-#{dspace_filename}-build.dir && JAVA_HOME=#{java_home} #{ant_home}/bin/ant fresh-install"
   end
   
   desc "Update DSpace with Ant"
   task :update, :roles=>[:app] do
-    run "cd #{deploy_to}/current/dspace/target/dspace-#{dspace_version}-build.dir && JAVA_HOME=#{java_home} #{ant_home}/bin/ant update"
+    run "cd #{deploy_to}/current/dspace/target/dspace-#{dspace_filename}-build.dir && JAVA_HOME=#{java_home} #{ant_home}/bin/ant update"
   end
   
 end
@@ -271,7 +294,9 @@ namespace :deploy do
   
 end
 
+# Some before and after hooks for regular deploy
 after 'deploy:update', 'dspace:build', 'dspace:update'
+
 
 ###
 ### Unused tasks
@@ -282,7 +307,7 @@ after 'deploy:update', 'dspace:build', 'dspace:update'
 # either don't apply, or I haven't made work.
 #
 namespace :deploy do
-  [ :upload, :cold, :start, :stop, :migrate, :migrations ].each do |default_task|
+  [ :upload, :start, :stop, :migrate, :migrations ].each do |default_task|
     desc "[internal] disabled"
     task default_task do
       # disabled
