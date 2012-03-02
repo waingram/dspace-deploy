@@ -8,7 +8,7 @@ require 'open-uri'
 set :application,    "ideals-dspace"
 set :env_type,       "dev"
 
-set :scm, :subfilename
+set :scm, :subversion
 set :repository,     "https://track.library.uiuc.edu/svn/ideals-dspace/trunk"
 
 server               "luk.cites.illinois.edu", :app, :db, :primary => true
@@ -89,69 +89,80 @@ namespace :prep do
     put buffer, "#{service_root}/.bashrc", :mode => 0600
   end
 
-  desc 'Install Java JDK'
-  task :install_java, :roles => :app do
-    run "mkdir -p #{java_home}"
+  namespace :java do
+    desc 'Install Java JDK'
+    task :install, :roles => :app do
+      run "mkdir -p #{java_home}"
 
-    # Delete any old files
-    run "cd #{java_home} && rm -rf *"
-    
-    logger.info "web download #{java_mirror}" if logger
-    buffer = open(java_mirror).read
-    put buffer, "#{java_home}/#{java_binary}", :mode => 0755
-    
-    run "cd #{java_home} && echo 'yes' '\n' | ./#{java_binary} 1>/dev/null"
-    run "cd #{java_home} && ln -s #{jdk_filename} jdk"
-    run "cd #{java_home} && rm -f #{java_binary}"
-  end
-  
-  desc 'Install Maven'
-  task :install_maven, :roles => :app do
-    install_tarball maven_home, maven_mirror, maven_tarball, maven_filename
-  end
-    
-  desc 'Install Ant'
-  task :install_ant, :roles => :app do
-    install_tarball ant_home, ant_mirror, ant_tarball, ant_filename
-  end
-
-  desc 'Install Tomcat'
-  task :install_tomcat, :roles => :app do
-    install_tarball tomcat_home, tomcat_mirror, tomcat_tarball, tomcat_filename
-  end
-
-  desc 'Configure Tomcat'
-  task :conf_tomcat, :roles => :app do
-    file = File.join(File.dirname(__FILE__), 'templates', 'server.xml.erb')
-    template = File.read(file)
-    buffer = ERB.new(template).result(binding)
-    run "mv #{tomcat_home}/conf/server.xml #{tomact_home}/conf/server.xml.original"
-    put buffer, "#{tomcat_home}/conf/server.xml", :mode => 0600
-  end
-  
-  desc 'Install PostgreSQL'
-  task :install_postgresql, :roles => :db do
-    
-    backup = remote_file_exists? "#{pg_data}"   # try to back up any existing database
-    p backup
-    if backup
-      stamp = Time.now.utc.strftime("%Y%m%d%H%M.%S")
-      run "cd #{service_root} && PGDATA=#{pg_data} PGHOST=#{pg_host} pg_dumpall -o > tmp/postgres.#{stamp}.out"
-      run "cd #{service_root} && mv #{pg_data} tmp/pg_data.#{stamp}.old"
-    end
-    run "cd #{service_root} && initdb -D #{pg_data}"
-    if backup
-      run "cd #{service_root} && PGDATA=#{pg_data} PGHOST=#{pg_host} psql -d template1 -f tmp/postgres.#{stamp}.out"
+      # Delete any old files
+      run "cd #{java_home} && rm -rf *"
+      
+      logger.info "web download #{java_mirror}" if logger
+      buffer = open(java_mirror).read
+      put buffer, "#{java_home}/#{java_binary}", :mode => 0755
+      
+      run "cd #{java_home} && echo 'yes' '\n' | ./#{java_binary} 1>/dev/null"
+      run "cd #{java_home} && ln -s #{jdk_filename} jdk"
+      run "cd #{java_home} && rm -f #{java_binary}"
     end
   end
 
-  desc 'Configure PostgreSQL'
-  task :conf_postgres, :roles => :db do
-    file = File.join(File.dirname(__FILE__), 'templates', 'postgresql.conf.erb')
-    template = File.read(file)
-    buffer = ERB.new(template).result(binding)
-    run "mv #{pg_data}/postgresql.conf #{pg_data}/postgresql.conf.original"
-    put buffer, "#{pg_data}/postgresql.conf", :mode => 0600
+  namespace :maven do
+    desc 'Install Maven'
+    task :install, :roles => :app do
+      install_tarball maven_home, maven_mirror, maven_tarball, maven_filename
+    end
+  end
+
+  namespace :ant do
+    desc 'Install Ant'
+    task :install_ant, :roles => :app do
+      install_tarball ant_home, ant_mirror, ant_tarball, ant_filename
+    end
+  end
+
+  namespace :tomcat do
+    desc 'Install Tomcat'
+    task :install, :roles => :app do
+      install_tarball tomcat_home, tomcat_mirror, tomcat_tarball, tomcat_filename
+    end
+
+    desc 'Configure Tomcat'
+    task :config, :roles => :app do
+      file = File.join(File.dirname(__FILE__), 'templates', 'server.xml.erb')
+      template = File.read(file)
+      buffer = ERB.new(template).result(binding)
+      run "mv #{tomcat_home}/conf/server.xml #{tomact_home}/conf/server.xml.original"
+      put buffer, "#{tomcat_home}/conf/server.xml", :mode => 0600
+    end
+  end
+
+  namespace :pg do
+    desc 'Install PostgreSQL'
+    task :install, :roles => :db do
+      
+      backup = remote_file_exists? "#{pg_data}"   # try to back up any existing database
+      p backup
+      if backup
+        stamp = Time.now.utc.strftime("%Y%m%d%H%M.%S")
+        run "cd #{service_root} && PGDATA=#{pg_data} PGHOST=#{pg_host} pg_dumpall -o > tmp/postgres.#{stamp}.out"
+        run "cd #{service_root} && mv #{pg_data} tmp/pg_data.#{stamp}.old"
+      end
+      run "cd #{service_root} && initdb -D #{pg_data}"
+      if backup
+        run "cd #{service_root} && PGDATA=#{pg_data} PGHOST=#{pg_host} psql -d template1 -f tmp/postgres.#{stamp}.out"
+      end
+    end
+
+    desc 'Configure PostgreSQL'
+    task :config, :roles => :db do
+      run "cd #{pg_home} && mkdir -p log run"
+      run "mv #{pg_data}/postgresql.conf #{pg_data}/postgresql.conf.original"
+      file = File.join(File.dirname(__FILE__), 'templates', 'postgresql.conf.erb')
+      template = File.read(file)
+      buffer = ERB.new(template).result(binding)
+      put buffer, "#{pg_data}/postgresql.conf", :mode => 0600
+    end
   end
   
 end
@@ -186,8 +197,9 @@ def remote_file_exists? remote_path
 end
 
 # Some before and after hooks for cold deploy
-before 'prep:install_postgresql', 'tomcat:stop', 'postgres:stop'
-after 'prep:install_postgresql', 'postgres:start', 'tomcat:start'
+before 'prep:pg:install',     'tomcat:stop', 'pg:stop'
+after  'prep:pg:install',     'prep:pg:config'
+after  'prep:tomcat:install', 'prep:tomcat:config'
 
 
 ###
@@ -227,7 +239,7 @@ namespace :tomcat do
   
 end
 
-namespace :postgres do
+namespace :pg do
   
   desc "Start PostgreSQL"
   task :start, :roles => [:db] do
