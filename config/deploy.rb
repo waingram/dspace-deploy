@@ -125,6 +125,7 @@ namespace :prep do
     file = File.join(File.dirname(__FILE__), 'templates', 'server.xml.erb')
     template = File.read(file)
     buffer = ERB.new(template).result(binding)
+    run "mv #{tomcat_home}/conf/server.xml #{tomact_home}/conf/server.xml.original"
     put buffer, "#{tomcat_home}/conf/server.xml", :mode => 0600
   end
   
@@ -146,6 +147,11 @@ namespace :prep do
 
   desc 'Configure PostgreSQL'
   task :conf_postgres, :roles => :db do
+    file = File.join(File.dirname(__FILE__), 'templates', 'postgresql.conf.erb')
+    template = File.read(file)
+    buffer = ERB.new(template).result(binding)
+    run "mv #{pg_data}/postgresql.conf #{pg_data}/postgresql.conf.original"
+    put buffer, "#{pg_data}/postgresql.conf", :mode => 0600
   end
   
 end
