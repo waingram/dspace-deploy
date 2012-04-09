@@ -31,6 +31,7 @@ export color_light_gray='\e[0;37m'
 
 #Prompt
 color_ps1=$color_green
+#git_piece='$(__git_ps1 " \[$color_red\]%s\[$color_none\]")'
 date_piece="\[${color_gray}\]\$(date '+%a %H:%M:%S')\[${color_none}\]"
 export PS1="${date_piece} \u\[${color_ps1}\]@\[${color_none}\]\h \[${color_gray}\]\w\[${git_piece}\]\n\[${color_ps1}\]\$\[${color_none}\] "
 
@@ -41,20 +42,27 @@ export PS1="${date_piece} \u\[${color_ps1}\]@\[${color_none}\]\h \[${color_gray}
 set -o emacs
 
 #Aliases to display colors when listing files
-color='--color=auto'
-alias ls='ls $color'
-alias la='ls -a $color'
-alias lal='ls -lha $color'
-alias l='ls $color'
-alias ll='ls -lh $color'
-alias lt='ls -lhtr $color'
+if [ "$TERM" != "dumb" ]; then
+   color='--color=auto'
+   alias ls='ls $color'
+   alias la='ls -a $color'
+   alias lal='ls -lha $color'
+   alias l='ls $color'
+   alias ll='ls -lh $color'
+   alias lt='ls -lhtr $color'
+fi
 
 alias du='du -k --max-depth=1'
 alias df='df -h'
 alias less='less -R'
 
+alias emacs="emacs -nw"
+alias e=emacs
+alias profileme="history |awk '{print \$2}' |awk 'BEGIN{FS=\"|\"{print \$1}' |sort |uniq -c |sort -nr |head -n 20"
+
 export HISTSIZE=1000000
 export VISUAL=emacs
+export EDITOR=emacs
 
 bind "set show-all-if-ambiguous On"
 
@@ -67,41 +75,41 @@ export PATH=$PATH:/usr/sbin:/sbin
 export PATH=$HOME/bin:$PATH
 
 #Base path of Tomcat
-export CATALINA_HOME=<%=catalina_home%>
+export CATALINA_HOME=<%= catalina_home %>
 
 #Base path of Ant
-export ANT_HOME=<%=ant_home%>
+export ANT_HOME=<%= ant_home %>
 
 #Base path of JAVA JDK and JRE
-export JAVA_HOME=<%=java_home%>
-export JRE_HOME=<%=jre_home%>
+export JAVA_HOME=<%= java_home %>
+export JRE_HOME=<%= jre_home %>
 
 #Gives Tomcat access to Java SSL Libraries
 export JSSE_HOME=$JRE_HOME/lib
 
 #Ensures Tomcat and DSpace have enough memory and use UTF-8
-export CATALINA_OPTS="<%=catalina_opts%>"
+export CATALINA_OPTS="<%= catalina_opts %>"
 
-export JAVA_OPTS="<%=java_opts%>"
+export JAVA_OPTS="<%= java_opts %>"
 
 #Add Tomcat, Ant and Java 'bin' directories to PATH
 export PATH=$JRE_HOME/bin:$JAVA_HOME/bin:$ANT_HOME/bin:$CATALINA_HOME/bin:$PATH
 
 #Add Maven 'bin' directory to PATH
-export MAVEN_HOME=<%=maven_home%>
+export MAVEN_HOME=<%= maven_home %>
 export PATH=$MAVEN_HOME/bin:$PATH
 
 #Give Maven more memory to work with and use UTF-8
-export MAVEN_OPTS="<%=maven_opts%>"
+export MAVEN_OPTS="<%= maven_opts %>"
 
 #Add Environment Variables for PostgreSQL (managed by CITES SMG)
-export PGDATA=<%=pgdata%>
-export PGHOST=<%=pghost%>
+export PGDATA=<%= pg_data %>
+export PGHOST=<%= pg_host %>
 
 #Base path of DSpace (and add to system PATH)
-export DSPACE_HOME=<%=dspace_home%>
+export DSPACE_HOME=<%= dspace_home %>
 export PATH=$DSPACE_HOME/bin:$PATH
 
 #Add ClamAV to the PATH
-export CLAMAV_HOME=<%=clamav_home%>
+export CLAMAV_HOME=<%= clamav_home %>
 export PATH=$CLAMAV_HOME/bin:$CLAMAV_HOME/sbin:$PATH

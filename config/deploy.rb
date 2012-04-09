@@ -5,22 +5,22 @@
 
 require 'open-uri'
 
-set :application,    "ideals-dspace"
+set :application,    "ideals-bibapp"
 set :env_type,       "dev"
 
 set :scm, :subversion
 set :repository,     "https://track.library.uiuc.edu/svn/ideals-dspace/trunk"
 
-server               "luk.cites.illinois.edu", :app, :db, :primary => true
+server               "saga-dev.cites.illinois.edu", :app, :db, :primary => true
 
 set :deploy_via, :copy
 set :copy_strategy, :export
 
-set :user,           "ideals-dspace"
-set :group,          "ideals-dspace"
+set :user,           "ideals-bibapp"
+set :group,          "ideals-bibapp"
 
-set :service_root,  "/services/#{application}/tmp/#{application}"
-#set :service_root,   "/services/#{application}"
+#set :service_root,  "/services/#{application}/tmp/#{application}"
+set :service_root,   "/services/#{application}"
 set :service_email,  "ideals-admin@illinois.edu"
 
 depend :remote, :directory, service_root
@@ -30,8 +30,11 @@ set :use_sudo,       false
 
 # Java
 set :java_binary,    "jdk-6u31-linux-x64.bin"
-set :java_mirror,    "http://download.oracle.com/otn-pub/java/jdk/6u31-b04/jdk-6u31-linux-x64.bin"
-set :jdk_filename,    "jdk1.6.0_31"
+## Oracle no longer allows direct downloads of Java, so you have to manually
+## download it to your desktop first. Grr. 
+## set :java_mirror,    "http://download.oracle.com/otn-pub/java/jdk/6u31-b04/jdk-6u31-linux-x64.bin"
+set :java_mirror,    "/home/wingram2/Downloads/jdk-6u31-linux-x64.bin"
+set :jdk_filename,   "jdk1.6.0_31"
 set :java_home,      "#{service_root}/java"
 set :jdk_home,       "#{java_home}/jdk"
 set :jre_home,       "#{jdk_home}/jre"
@@ -73,6 +76,9 @@ set :dspace_source,  "#{deploy_to}"
 set :dspace_db_user, "dspace"
 set :dspace_db_name, "dspace"
 
+# ClamAV
+set :clamav_home,    "#{service_root}/clamav"
+
 ###
 ### Cold Deploy
 ### 
@@ -80,9 +86,10 @@ set :dspace_db_name, "dspace"
 namespace :prep do
   desc 'Initializes the service directory'
   task :init, :roles => :app do
-    run "echo '#{service_email}' | #{service_root}/.forward"
-    run "mkdir #{service_root}/tmp"
-    run "chmod 755 #{service_root}/tmp"
+    run "umask 022"
+    run "touch #{service_root}/.forward && echo '#{service_email}' > #{service_root}/.forward"
+    run "touch #{service_root}/.bash_profile && echo '. ~/.bashrc' >> #{service_root}/.bash_profile"
+    run "mkdir -p #{service_root}/tmp #{service_root}/bin"
     file = File.join(File.dirname(__FILE__), 'templates', 'bashrc.erb')
     template = File.read(file)
     buffer = ERB.new(template).result(binding)
@@ -157,7 +164,7 @@ namespace :prep do
     desc 'Configure PostgreSQL'
     task :config, :roles => :db do
       run "cd #{pg_home} && mkdir -p log run"
-      run "mv #{pg_data}/postgresql.conf #{pg_data}/postgresql.conf.original"
+      run "mv #{pg_data}/postgresql.conf #{pg_data}/postgresql.conf.pre"
       file = File.join(File.dirname(__FILE__), 'templates', 'postgresql.conf.erb')
       template = File.read(file)
       buffer = ERB.new(template).result(binding)
