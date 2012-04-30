@@ -5,19 +5,19 @@
 
 require 'open-uri'
 
-set :application,    "ideals-bibapp"
+set :application,    "ideals-dspace"
 set :env_type,       "dev"
 
-set :scm, :subversion
-set :repository,     "https://track.library.uiuc.edu/svn/ideals-dspace/trunk"
+set :scm, :git
+set :repository,     "git@bitbucket.org:UIUCLibrary/ideals-dspace.git"
 
-server               "saga-dev.cites.illinois.edu", :app, :db, :primary => true
+server               "luk.cites.illinois.edu", :app, :db, :primary => true
 
 set :deploy_via, :copy
 set :copy_strategy, :export
 
-set :user,           "ideals-bibapp"
-set :group,          "ideals-bibapp"
+set :user,           "ideals-dspace"
+set :group,          "ideals-dspace"
 
 #set :service_root,  "/services/#{application}/tmp/#{application}"
 set :service_root,   "/services/#{application}"
@@ -35,9 +35,9 @@ set :java_binary,    "jdk-6u31-linux-x64.bin"
 ## set :java_mirror,    "http://download.oracle.com/otn-pub/java/jdk/6u31-b04/jdk-6u31-linux-x64.bin"
 set :java_mirror,    "/home/wingram2/Downloads/jdk-6u31-linux-x64.bin"
 set :jdk_filename,   "jdk1.6.0_31"
-set :java_home,      "#{service_root}/java"
-set :jdk_home,       "#{java_home}/jdk"
-set :jre_home,       "#{jdk_home}/jre"
+set :java_root,      "#{service_root}/java"
+set :java_home,       "#{java_root}/jdk"
+set :jre_home,       "#{java_home}/jre"
 set :jsse_home,      "#{jre_home}/lib"
 set :java_opts,      "-Dhttps.protocols=SSLv3"
 
