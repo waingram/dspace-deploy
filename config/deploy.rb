@@ -310,10 +310,10 @@ namespace :deploy do
 
   desc "Restart Postgres and Tomcat"
   task :restart, :roles=>[:app,:db] do
-    postgres.stop
+    pg.stop
     tomcat.stop
     tomcat.clean
-    postgres.start
+    pg.start
     tomcat.start
   end
   
